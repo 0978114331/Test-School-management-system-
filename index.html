@@ -111,6 +111,7 @@
       .btn-close { position: absolute; top: 1.2rem; right: 1.2rem; background: var(--surface3); border: 1px solid var(--border); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; z-index: 100; }
       .btn-close:hover { background: var(--red); color: white; border-color: var(--red); transform: rotate(90deg); }
 
+      /* Fix QR Canvas overflowing on small screens */
       #qr-display canvas, #qr-display img { max-width: 100% !important; height: auto !important; margin: 0 auto; }
 
       /* ===== BUTTONS & FORMS ===== */
@@ -257,28 +258,14 @@
   </head>
   <body>
 
-    <!-- ================= CLEAN LOGIN SECURITY MODALS ================= -->
-    
-    <!-- Admin Login -->
-    <div class="modal-overlay" id="admin-login-modal" style="z-index: 9999; background: var(--bg);">
-        <div class="modal" style="text-align:center; max-width: 380px;">
-            <h2 style="color:var(--gold);margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:2rem;">Admin Access</h2>
-            <p style="color:var(--muted); margin-bottom:2rem; font-size:0.95rem;">Please enter the system PIN.</p>
+    <!-- ================= ADMIN PIN SECURITY MODAL ================= -->
+    <div class="modal-overlay" id="pin-modal" style="z-index: 9999; background: var(--bg);">
+        <div class="modal" style="text-align:center; max-width: 350px;">
+            <h2 style="color:var(--gold);margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:2rem;">Admin Login</h2>
+            <p style="color:var(--muted); margin-bottom:2rem; font-size:0.95rem;">Enter security PIN to access the dashboard.</p>
             <input type="password" id="admin-pin-input" class="form-input" style="text-align:center; font-size:2rem; letter-spacing:10px; margin-bottom:1.5rem; font-weight:bold; height:60px;" placeholder="****">
-            <div id="admin-pin-error" style="color:var(--red); font-size:0.9rem; margin-bottom:1.5rem; display:none; font-weight:bold;">Incorrect PIN. Try again.</div>
-            <button class="btn btn-gold btn-full" style="padding:1.2rem; font-size:1.1rem; text-transform:uppercase;" onclick="verifyAdminPin()">Unlock Dashboard</button>
-            <button class="btn btn-outline btn-full" style="padding:1rem; font-size:0.9rem; margin-top:1rem; border:none;" onclick="triggerTransition('customer')">Go to Customer App</button>
-        </div>
-    </div>
-
-    <!-- Customer Login -->
-    <div class="modal-overlay" id="customer-login-modal" style="z-index: 9999; background: var(--bg);">
-        <div class="modal" style="text-align:center; max-width: 380px;">
-            <h2 style="color:var(--gold);margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:2rem;">Customer Access</h2>
-            <p style="color:var(--muted); margin-bottom:2rem; font-size:0.95rem;">Please enter the store PIN to order.</p>
-            <input type="password" id="customer-pin-input" class="form-input" style="text-align:center; font-size:2rem; letter-spacing:10px; margin-bottom:1.5rem; font-weight:bold; height:60px;" placeholder="****">
-            <div id="customer-pin-error" style="color:var(--red); font-size:0.9rem; margin-bottom:1.5rem; display:none; font-weight:bold;">Incorrect PIN. Try again.</div>
-            <button class="btn btn-gold btn-full" style="padding:1.2rem; font-size:1.1rem; text-transform:uppercase;" onclick="verifyCustomerPin()">Enter Menu</button>
+            <div id="pin-error" style="color:var(--red); font-size:0.9rem; margin-bottom:1rem; display:none; font-weight:bold;">Incorrect PIN. Try again.</div>
+            <button class="btn btn-gold btn-full" style="padding:1.2rem; font-size:1.1rem; text-transform:uppercase;" onclick="verifyAdminPin()">Login</button>
         </div>
     </div>
 
@@ -303,7 +290,7 @@
         <div style="display:flex;align-items:center;gap:1rem;">
           <button class="lang-btn" onclick="toggleLanguage()">🌐 <span id="current-lang">EN</span></button>
           <div class="nav-status"><div class="pulse" id="db-status-pulse"></div><span id="db-status-text" data-i18n="live">Live</span></div>
-          <button class="btn btn-outline btn-sm" onclick="triggerTransition('customer')" data-i18n="customerView">Customer View</button>
+          <button class="btn btn-outline btn-sm" onclick="previewCustomer()" data-i18n="customerView">Customer View</button>
         </div>
       </nav>
       
@@ -369,21 +356,11 @@
              <!-- Security Configuration -->
              <div style="background:var(--surface2); padding:2rem; border-radius:20px; border:1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); grid-column: 1 / -1;">
                 <h3 style="color:var(--gold); margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:1.5rem;" data-i18n="securitySettings">Security Settings</h3>
-                <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.5rem;" data-i18n="securityDesc">Protect the system with PIN codes. Leave blank to disable protection.</p>
+                <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.5rem;" data-i18n="securityDesc">Protect the Admin Dashboard with a PIN code. Leave blank to disable.</p>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Admin PIN Code</label><input type="password" class="form-input" id="settings-admin-pin" placeholder="Enter Admin PIN" /></div>
-                    <div class="form-group"><label class="form-label">Customer PIN Code</label><input type="password" class="form-input" id="settings-customer-pin" placeholder="Enter Customer PIN" /></div>
+                    <div class="form-group"><label class="form-label" data-i18n="adminPin">Admin PIN Code</label><input type="password" class="form-input" id="settings-admin-pin" placeholder="Enter new PIN" /></div>
                 </div>
-                <button class="btn btn-gold" onclick="saveSecuritySettings()">Save Security</button>
-             </div>
-
-             <!-- Database Reset -->
-             <div style="background:rgba(231,76,60,0.05); padding:2rem; border-radius:20px; border:1px solid rgba(231,76,60,0.3); box-shadow: 0 8px 30px rgba(0,0,0,0.4); grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h3 style="color:var(--red); margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1.5rem;">Reset Sales & Customer Data</h3>
-                    <p style="color:var(--muted); font-size:0.9rem; margin:0;">Clear all orders, revenue, and analytics. Products and settings will be saved.</p>
-                </div>
-                <button class="btn btn-danger" style="padding:1rem 2rem;" onclick="clearAllCustomerData()">Reset Data</button>
+                <button class="btn btn-gold" onclick="saveSecuritySettings()" data-i18n="saveSettingsBtn">Save Security</button>
              </div>
 
              <!-- Currency Configuration -->
@@ -477,7 +454,7 @@
     <!-- ================= CUSTOMER VIEW ================= -->
     <div class="view" id="view-customer">
       <div style="position:absolute; top:15px; left:15px; z-index: 100; display:flex; gap:0.5rem;">
-        <button id="btn-back-admin" class="btn btn-outline btn-sm" style="display:none; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); border:1px solid var(--border);" onclick="triggerTransition('admin')" data-i18n="backToAdmin">← Admin</button>
+        <button id="btn-back-admin" class="btn btn-outline btn-sm" style="display:none; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); border:1px solid var(--border);" onclick="showView('admin')" data-i18n="backToAdmin">← Admin</button>
       </div>
       <button class="lang-btn" style="position:absolute; top:15px; right:15px; z-index: 100; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); border:1px solid var(--border);" onclick="toggleLanguage()">🌐 <span id="c-current-lang">EN</span></button>
 
@@ -491,7 +468,7 @@
       </div>
       
       <!-- AD BANNER CAROUSEL -->
-      <div class="customer-promo fade-in" id="c-promo-container" style="display:none;">
+      <div class="customer-promo fade-in" id="c-promo-container" style="animation-delay: 0.1s;">
           <div class="carousel-container" id="carousel-wrapper">
               <!-- Slides injected here -->
           </div>
@@ -602,12 +579,11 @@
         </div>
     </div>
 
-    <!-- Admin Add Menu Modal -->
+    <!-- Admin Add Menu / Payment / QR / View Table Modals -->
+    <div class="modal-overlay" id="qr-modal"><div class="modal" style="text-align:center;"><button class="btn-close" onclick="document.getElementById('qr-modal').classList.remove('open')">&times;</button><h2 style="color:var(--gold);margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:2rem;" id="qr-table-label">Table</h2><div style="background:white;padding:1.5rem;display:inline-block;border-radius:16px;margin-bottom:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);" id="qr-display"></div><br><button class="btn btn-outline" style="padding:0.8rem 2rem; font-size:1rem;" onclick="printQR()" data-i18n="printQrBtn">Print QR</button></div></div>
+    
     <div class="modal-overlay" id="add-menu-modal"><div class="modal"><button class="btn-close" onclick="document.getElementById('add-menu-modal').classList.remove('open')">&times;</button><h2 style="color:var(--gold);margin-bottom:2rem; font-family:'Playfair Display',serif; font-size:1.8rem;" id="menu-modal-title" data-i18n="addMenuTitle">Add Item</h2><div class="form-row"><div class="form-group"><label class="form-label" data-i18n="itemName">Name</label><input class="form-input" id="m-name" /></div><div class="form-group"><label class="form-label" data-i18n="category">Category</label><input class="form-input" id="m-cat" /></div></div><div class="form-group"><label class="form-label" data-i18n="description">Description</label><input class="form-input" id="m-desc" /></div><div class="form-row"><div class="form-group"><label class="form-label" data-i18n="price">Price ($)</label><input class="form-input" id="m-price" type="number" step="0.01" /></div><div class="form-group"><label class="form-label" data-i18n="available">Available</label><select class="form-input" id="m-available"><option value="true">Yes</option><option value="false">No</option></select></div></div><div class="form-group"><label class="form-label" data-i18n="imageUrl">Image URL</label><input class="form-input" id="m-image" placeholder="https://..." /></div><input type="hidden" id="m-edit-id"/><button class="btn btn-gold btn-full" style="padding:1rem; font-size:1.1rem; margin-top:1rem;" onclick="saveMenuItem()" data-i18n="saveItemBtn">Save</button></div></div>
     
-    <!-- Admin QR Modal -->
-    <div class="modal-overlay" id="qr-modal"><div class="modal" style="text-align:center;"><button class="btn-close" onclick="document.getElementById('qr-modal').classList.remove('open')">&times;</button><h2 style="color:var(--gold);margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:2rem;" id="qr-table-label">Table</h2><div style="background:white;padding:1.5rem;display:inline-block;border-radius:16px;margin-bottom:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);" id="qr-display"></div><br><button class="btn btn-outline" style="padding:0.8rem 2rem; font-size:1rem;" onclick="printQR()" data-i18n="printQrBtn">Print QR</button></div></div>
-
     <!-- Cashier Payment Dual Currency Modal -->
     <div class="modal-overlay" id="payment-modal">
         <div class="modal">
@@ -671,7 +647,7 @@
         </div>
     </div>
 
-    <!-- Order Preview Modal -->
+    <!-- Order Preview Modal (For Dashboard Orders Button) -->
     <div class="modal-overlay" id="order-preview-modal">
         <div class="modal" style="max-width:700px; padding:2.5rem;">
             <button class="btn-close" onclick="document.getElementById('order-preview-modal').classList.remove('open')">&times;</button>
@@ -700,10 +676,12 @@
             <div id="preview-order-location" style="margin-bottom:1.5rem; text-align:right; font-size:0.9rem;"></div>
 
             <div id="preview-order-note" style="background:rgba(231,76,60,0.1); border-left:4px solid var(--red); padding:1rem; margin-bottom:1.5rem; border-radius:8px; display:none; color:var(--cream); font-size:0.95rem;">
+                <!-- note injected here -->
             </div>
 
             <h3 style="color:var(--gold); margin-bottom:1rem; font-size:1.2rem; font-family:'Playfair Display',serif;" data-i18n="orderedProducts">Ordered Products</h3>
             <div id="preview-order-items" style="display:grid; gap:1rem; max-height:40vh; overflow-y:auto; padding-right:10px;">
+                <!-- dynamic items -->
             </div>
         </div>
     </div>
@@ -721,7 +699,7 @@
           systemSettings: "Settings", dbDesc: "Database automatically linked for Real-time sync.", tgDesc: "Get orders & location via Telegram.", saveSettingsBtn: "Save",
           promoTitle: "Promo Banner (Customer App)", promoDesc: "Display an advertisement or promotion template for customers.", promoUrl: "Banner Image URL", promoStatus: "Status", savePromoBtn: "Save Banner",
           currencySettings: "Currency Settings", currencyDesc: "Configure the USD to KHR exchange rate.", exchangeRate: "Exchange Rate (1 USD = ? KHR)", payCurrency: "Payment Currency",
-          securitySettings: "Security Settings", securityDesc: "Protect the system with PIN codes. Leave blank to disable protection.",
+          securitySettings: "Security Settings", securityDesc: "Protect the Admin Dashboard with a PIN code. Leave blank to disable.", adminPin: "Admin PIN Code",
           backToAdmin: "← Admin", tagline: "Scan. Order. Enjoy.", all: "All", viewCart: "View Cart", yourOrder: "Your Order", printQrBtn: "Print QR", doneBtn: "Done",
           addMenuTitle: "Add/Edit Item", itemName: "Name", category: "Category", description: "Description", price: "Price ($)", available: "Available", imageUrl: "Image URL", saveItemBtn: "Save",
           checkoutTitle: "Checkout", totalAmount: "Total Amount:", cashReceived: "Cash Received", changeReturn: "Change:", payPrintBtn: "Pay & Print", payConfirmBtn: "Confirm", 
@@ -738,7 +716,7 @@
           systemSettings: "ការកំណត់ប្រព័ន្ធ", dbDesc: "ទិន្នន័យត្រូវបានភ្ជាប់ដោយស្វ័យប្រវត្តិរួចរាល់", tgDesc: "ទទួលបានការកុម្ម៉ង់ និងទីតាំងភ្ញៀវតាម Telegram.", saveSettingsBtn: "រក្សាទុក",
           promoTitle: "ផ្ទាំងផ្សាយពាណិជ្ជកម្ម (ភ្ញៀវ)", promoDesc: "បង្ហាញផ្ទាំងប្រូម៉ូសិន ឬពាណិជ្ជកម្មនៅខាងលើបញ្ជីទំនិញសម្រាប់ភ្ញៀវ។", promoUrl: "តំណភ្ជាប់រូបភាព Banner", promoStatus: "ស្ថានភាព", savePromoBtn: "រក្សាទុក Banner",
           currencySettings: "ការកំណត់រូបិយប័ណ្ណ", currencyDesc: "កំណត់អត្រាប្តូរប្រាក់ ដុល្លារ ទៅ រៀល", exchangeRate: "អត្រាប្តូរប្រាក់ (១ ដុល្លារ = ? រៀល)", payCurrency: "បង់ប្រាក់ជារូបិយប័ណ្ណ",
-          securitySettings: "ការកំណត់សុវត្ថិភាព", securityDesc: "ការពារប្រព័ន្ធជាមួយលេខកូដសម្ងាត់ (PIN)។ ទុកចំហរប្រសិនបើចង់បិទមុខងារនេះ។",
+          securitySettings: "ការកំណត់សុវត្ថិភាព", securityDesc: "ការពារផ្ទាំងគ្រប់គ្រងជាមួយលេខកូដសម្ងាត់ (PIN)។ ទុកចំហរប្រសិនបើចង់បិទមុខងារនេះ។", adminPin: "លេខកូដសម្ងាត់ (PIN)",
           backToAdmin: "← ទៅ Admin", tagline: "ស្កេន កុម្ម៉ង់ រីករាយ។", all: "ទាំងអស់", viewCart: "មើលកន្ត្រក", yourOrder: "ការកុម្ម៉ង់របស់អ្នក", printQrBtn: "ព្រីន QR", doneBtn: "រួចរាល់",
           addMenuTitle: "បន្ថែម/កែប្រែទំនិញ", itemName: "ឈ្មោះ", category: "ប្រភេទ", description: "ការពិពណ៌នា", price: "តម្លៃ ($)", available: "ស្ថានភាព", imageUrl: "តំណភ្ជាប់រូបភាព", saveItemBtn: "រក្សាទុក",
           checkoutTitle: "ទូទាត់ប្រាក់", totalAmount: "ទឹកប្រាក់សរុប៖", cashReceived: "ប្រាក់ទទួល", changeReturn: "ប្រាក់អាប់៖", payPrintBtn: "ទូទាត់ & ព្រីន", payConfirmBtn: "បញ្ជាក់ការទូទាត់",
@@ -839,7 +817,7 @@
                         if(data.promo) localStorage.setItem(DB_KEY.promo, JSON.stringify(data.promo));
                         if(data.analytics) localStorage.setItem(DB_KEY.analytics, JSON.stringify(data.analytics));
                         
-                        if(!document.getElementById('admin-login-modal').classList.contains('open') && !document.getElementById('customer-login-modal').classList.contains('open')) {
+                        if(!document.getElementById('pin-modal').classList.contains('open')) {
                             refreshUI();
                         }
                     }
@@ -866,34 +844,25 @@
       // ================= SECURITY & VIEW LOGIC =================
       function toggleMobileMenu() { document.getElementById('admin-nav-tabs').classList.toggle('show'); }
 
-      function triggerTransition(targetView) {
-          executeViewSwitch(targetView);
-      }
-
       function showView(v) {
-        const s = dbGet(DB_KEY.settings) || {};
-        
-        // Strict Customer Mode via URL (?table=1) overrides everything and locks into customer view
         if(isStrictCustomerMode && v === 'admin') return; 
         
         if(v === 'admin') {
+            const s = dbGet(DB_KEY.settings) || {};
             if (s.adminPin && s.adminPin.trim() !== "" && sessionStorage.getItem('admin_auth') !== 'true') {
-                document.getElementById('admin-login-modal').classList.add('open');
-                document.getElementById('admin-login-modal').style.display = 'flex';
+                document.getElementById('pin-modal').classList.add('open');
                 return; 
             }
         }
+
+        document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+        document.getElementById("view-" + v).classList.add("active");
+        currentView = v;
+        const backBtn = document.getElementById("btn-back-admin");
+        if(backBtn) backBtn.style.display = (v === "customer" && !isStrictCustomerMode) ? "block" : "none";
         
-        // Customer PIN Logic (Only applied if they are NOT in strict QR code mode)
-        if(v === 'customer' && !isStrictCustomerMode) {
-            if (s.customerPin && s.customerPin.trim() !== "" && sessionStorage.getItem('customer_auth') !== 'true') {
-                document.getElementById('customer-login-modal').classList.add('open');
-                document.getElementById('customer-login-modal').style.display = 'flex';
-                return; 
-            }
-        }
-        
-        triggerTransition(v);
+        if (v === "admin") refreshUI();
+        if (v === "customer") { renderPromoBanner(); renderCustomerMenu(currentCatFilter, true); updateCartUI(); updateMyOrdersBtn(); }
       }
 
       function verifyAdminPin() {
@@ -902,48 +871,14 @@
           
           if (s.adminPin && inputVal === s.adminPin) {
               sessionStorage.setItem('admin_auth', 'true');
-              document.getElementById('admin-login-modal').classList.remove('open');
-              document.getElementById('admin-login-modal').style.display = 'none';
-              document.getElementById('admin-pin-error').style.display = 'none';
+              document.getElementById('pin-modal').classList.remove('open');
+              document.getElementById('pin-error').style.display = 'none';
               document.getElementById('admin-pin-input').value = "";
-              triggerTransition('admin'); 
+              showView('admin'); 
           } else {
-              document.getElementById('admin-pin-error').style.display = 'block';
+              document.getElementById('pin-error').style.display = 'block';
               document.getElementById('admin-pin-input').value = "";
           }
-      }
-
-      function verifyCustomerPin() {
-          const s = dbGet(DB_KEY.settings) || {};
-          const inputVal = document.getElementById('customer-pin-input').value;
-          
-          if (s.customerPin && inputVal === s.customerPin) {
-              sessionStorage.setItem('customer_auth', 'true');
-              document.getElementById('customer-login-modal').classList.remove('open');
-              document.getElementById('customer-login-modal').style.display = 'none';
-              document.getElementById('customer-pin-error').style.display = 'none';
-              document.getElementById('customer-pin-input').value = "";
-              triggerTransition('customer'); 
-          } else {
-              document.getElementById('customer-pin-error').style.display = 'block';
-              document.getElementById('customer-pin-input').value = "";
-          }
-      }
-
-      function executeViewSwitch(v) {
-        // Hide login modals if they were open
-        document.getElementById('admin-login-modal').style.display = 'none';
-        document.getElementById('customer-login-modal').style.display = 'none';
-        
-        document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
-        document.getElementById("view-" + v).classList.add("active");
-        currentView = v;
-        
-        const backBtn = document.getElementById("btn-back-admin");
-        if(backBtn) backBtn.style.display = (v === "customer" && !isStrictCustomerMode) ? "block" : "none";
-        
-        if (v === "admin") refreshUI();
-        if (v === "customer") { renderPromoBanner(); renderCustomerMenu(currentCatFilter, true); updateCartUI(); updateMyOrdersBtn(); }
       }
 
       function previewCustomer() { customerTableNum = 1; document.getElementById("c-table-text").textContent = "Table 1"; showView("customer"); }
@@ -978,21 +913,6 @@
           
           if(bOrders) { bOrders.textContent = pendingCount; bOrders.style.display = pendingCount > 0 ? 'inline-block' : 'none'; }
           if(bKitchen) { bKitchen.textContent = kitchenCount; bKitchen.style.display = kitchenCount > 0 ? 'inline-block' : 'none'; }
-      }
-
-      // ================= CLEAR CUSTOMER DATA =================
-      function clearAllCustomerData() {
-          if(!confirm("WARNING: This will delete all orders, revenue history, and analytics. Products and Settings will be kept. Continue?")) return;
-          dbSet(DB_KEY.orders, []);
-          dbSet(DB_KEY.count, "100");
-          dbSet(DB_KEY.analytics, { totalRevenue: 0, totalOrders: 0, totalProducts: 0, categorySales: {}, productSales: {}, daily: {}, monthly: {}, yearly: {} });
-          
-          let tables = dbGet(DB_KEY.tables) || [];
-          tables = tables.map(t => ({...t, currentOrders: 0, status: 'free'}));
-          dbSet(DB_KEY.tables, tables);
-          
-          refreshUI();
-          showToast("All customer data has been successfully cleared.");
       }
 
       // ================= CHART, STATS & ANALYTICS =================
@@ -1165,7 +1085,6 @@
       function showQR(num) { document.getElementById("qr-modal").classList.add("open"); document.getElementById("qr-table-label").textContent = "Table " + num; document.getElementById("qr-display").innerHTML = ""; const url = window.location.href.split("?")[0] + "?table=" + num; try { new QRCode(document.getElementById("qr-display"), { text: url, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff" }); } catch(e) { document.getElementById("qr-display").innerHTML = "QR Code"; } }
       function printQR() { const win = window.open("", "_blank"); win.document.write(`<html><body style="text-align:center;font-family:sans-serif;padding:40px;"><h2>COFFEE BUSRA</h2><p>${document.getElementById("qr-table-label").textContent}</p>${document.getElementById("qr-display").innerHTML}<p style="font-size:12px;">Scan to order</p><\/body><\/html>`); win.document.close(); setTimeout(() => { win.print(); win.close(); }, 300); }
 
-      // PRODUCT DELETION ADDED TO ADMIN MENU
       function renderAdminMenu() { 
         const el = document.getElementById("admin-menu-grid"); 
         if(el) {
@@ -1186,7 +1105,7 @@
                         
                         <div class="c-item-footer">
                             <div class="c-item-price">$${m.price.toFixed(2)}</div>
-                            <div style="display:flex; gap:0.6rem; align-items:center;">
+                            <div style="display:flex; gap:0.8rem; align-items:center;">
                                 <div class="switch-label-wrap" title="Turn Item On/Off">
                                     <label class="switch">
                                       <input type="checkbox" ${m.available ? 'checked' : ''} onchange="toggleAvailable(${m.id})">
@@ -1194,7 +1113,6 @@
                                     </label>
                                 </div>
                                 <button class="btn btn-outline btn-sm" onclick="openEditMenuModal(${m.id})">Edit</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteMenuItem(${m.id})">Del</button>
                             </div>
                         </div>
                     </div>
@@ -1208,14 +1126,6 @@
       function openEditMenuModal(id) { const m = (dbGet(DB_KEY.menu)||[]).find(x=>x.id===id); if(!m) return; editingMenuId=id; document.getElementById("m-name").value=m.name; document.getElementById("m-cat").value=m.cat; document.getElementById("m-desc").value=m.desc||""; document.getElementById("m-price").value=m.price; document.getElementById("m-image").value=m.image||""; document.getElementById("m-available").value=m.available?"true":"false"; document.getElementById("add-menu-modal").classList.add("open"); }
       function saveMenuItem() { const name=document.getElementById("m-name").value, cat=document.getElementById("m-cat").value, desc=document.getElementById("m-desc").value, price=parseFloat(document.getElementById("m-price").value), image=document.getElementById("m-image").value, available=document.getElementById("m-available").value==="true"; if(!name||!price) return showToast("Invalid Inputs"); let menu=dbGet(DB_KEY.menu)||[]; if(editingMenuId) menu=menu.map(m=>m.id===editingMenuId?{...m,name,cat,desc,price,image,available}:m); else menu.push({id:Date.now(),name,cat,desc,price,image,available}); dbSet(DB_KEY.menu,menu); document.getElementById("add-menu-modal").classList.remove("open"); refreshUI(); showToast("Item Saved!");}
       function toggleAvailable(id) { let m=dbGet(DB_KEY.menu)||[]; m=m.map(x=>x.id===id?{...x,available:!x.available}:x); dbSet(DB_KEY.menu,m); refreshUI(); showToast("Status Updated!"); }
-      function deleteMenuItem(id) {
-          if(!confirm("Are you sure you want to delete this product?")) return;
-          let menu = dbGet(DB_KEY.menu) || [];
-          menu = menu.filter(m => m.id !== id);
-          dbSet(DB_KEY.menu, menu);
-          refreshUI();
-          showToast("Product deleted successfully.");
-      }
 
       // ================= IMPROVED "ALL ORDERS" SECTION =================
       let openOrderGroups = new Set();
@@ -1341,6 +1251,7 @@
           
           document.getElementById('preview-order-total').textContent = "$" + order.total.toFixed(2);
           
+          // Customer Location Link Logic
           const locEl = document.getElementById('preview-order-location');
           if(order.lat && order.lng) {
               locEl.innerHTML = `<a href="https://maps.google.com/?q=${order.lat},${order.lng}" target="_blank" style="color:var(--blue); text-decoration:none; font-weight:bold;">📍 View Customer Location</a>`;
@@ -1589,6 +1500,136 @@
           win.document.close(); win.focus(); setTimeout(() => { win.print(); win.close(); }, 300); 
       }
 
+      // ================= SETTINGS =================
+      function loadSettings() { 
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; 
+          document.getElementById('fb-url').value = s.fbUrl || ""; 
+          document.getElementById('tg-token').value = s.tgToken || ""; 
+          document.getElementById('tg-chat-id').value = s.tgChatId || ""; 
+          document.getElementById('exchange-rate').value = s.exchangeRate || "4100";
+          document.getElementById('settings-admin-pin').value = s.adminPin || "";
+          
+          const p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
+          document.getElementById('promo-active').value = p.active ? "true" : "false";
+          renderPromoAdminList();
+      }
+      
+      function saveSecuritySettings() {
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
+          s.adminPin = document.getElementById('settings-admin-pin').value.trim();
+          dbSet(DB_KEY.settings, s); 
+          showToast("Security PIN Saved! 🔒");
+      }
+
+      function saveCurrencySettings() {
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
+          s.exchangeRate = document.getElementById('exchange-rate').value.trim() || "4100";
+          dbSet(DB_KEY.settings, s); 
+          showToast("Currency Settings Saved! ✅");
+      }
+      
+      function saveFirebaseSettings() { const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; s.fbUrl = document.getElementById('fb-url').value.trim(); localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); showToast("Database Link Saved! Reloading..."); setTimeout(() => window.location.reload(), 1000); }
+      
+      function saveTgSettings() { 
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; 
+          s.tgToken = document.getElementById('tg-token').value.trim(); 
+          s.tgChatId = document.getElementById('tg-chat-id').value.trim(); 
+          dbSet(DB_KEY.settings, s); 
+          showToast("Telegram Credentials Saved ✅"); 
+      }
+
+      function renderPromoAdminList() {
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
+          
+          if (p.url && (!p.images || p.images.length === 0)) {
+              p.images = [p.url];
+          }
+
+          const listEl = document.getElementById('promo-images-list');
+          if(!p.images || p.images.length === 0) {
+              listEl.innerHTML = `<div style="color:var(--muted); font-size:0.9rem;">No banners added. Add an image URL above.</div>`;
+              return;
+          }
+
+          listEl.innerHTML = p.images.map((img, idx) => `
+              <div style="display:flex; align-items:center; gap:10px; background:var(--surface3); padding:0.5rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                  <img src="${img}" style="width:60px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.src='https://via.placeholder.com/60x40?text=Error'">
+                  <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.8rem; color:var(--muted);">${img}</div>
+                  <button class="btn btn-danger btn-sm" onclick="removePromoImage(${idx})">&times;</button>
+              </div>
+          `).join("");
+      }
+
+      function addPromoImage() {
+          const input = document.getElementById('new-promo-url');
+          const url = input.value.trim();
+          if(!url) return showToast("Please enter an image URL.");
+          
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
+          if(!p.images) p.images = [];
+          if (p.url && p.images.length === 0) p.images = [p.url];
+          
+          p.images.push(url);
+          dbSet(DB_KEY.promo, p);
+          input.value = "";
+          renderPromoAdminList();
+          showToast("Image added to Banner!");
+      }
+
+      function removePromoImage(idx) {
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
+          if(!p.images) return;
+          p.images.splice(idx, 1);
+          dbSet(DB_KEY.promo, p);
+          renderPromoAdminList();
+      }
+
+      function savePromoSettings() {
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
+          p.active = document.getElementById('promo-active').value === "true";
+          dbSet(DB_KEY.promo, p);
+          refreshUI();
+          showToast("Promo Banner Settings Saved! 🎉");
+      }
+
+      // STRICT TELEGRAM API TESTER
+      function testTelegramConnection() {
+          const s = dbGet(DB_KEY.settings) || {}; 
+          const statusEl = document.getElementById('tg-status');
+          
+          if(!s || !s.tgToken || !s.tgChatId) {
+              statusEl.textContent = "Missing Info";
+              statusEl.style.color = "var(--red)";
+              return showToast("Please enter Bot Token and Chat ID first.");
+          }
+          
+          statusEl.textContent = "Connecting...";
+          statusEl.style.color = "var(--gold)";
+
+          fetch(`https://api.telegram.org/bot${s.tgToken}/sendMessage`, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ chat_id: s.tgChatId, text: "✅ *Telegram Integration Successful!* Cafe Busra is connected.", parse_mode: 'Markdown' }) 
+          })
+          .then(res => res.json())
+          .then(data => {
+              if(data.ok) {
+                  statusEl.textContent = "Connected ✅";
+                  statusEl.style.color = "var(--green)";
+                  showToast("Telegram Connected Successfully!");
+              } else {
+                  statusEl.textContent = "Error ❌";
+                  statusEl.style.color = "var(--red)";
+                  showToast("Error: " + data.description);
+              }
+          })
+          .catch(err => {
+              statusEl.textContent = "Failed ❌";
+              statusEl.style.color = "var(--red)";
+              showToast("Network Error connecting to Telegram.");
+          });
+      }
+
       // ================= CUSTOMER VIEW (PROMO CAROUSEL, CARDS & SEE MORE) =================
       let currentSlide = 0;
       let slideInterval;
@@ -1601,6 +1642,10 @@
           
           let p = dbGet(DB_KEY.promo) || {};
           
+          if (p.url && (!p.images || p.images.length === 0)) {
+              p.images = [p.url];
+          }
+          
           if(!p.active || !p.images || p.images.length === 0) {
               promoEl.style.display = 'none';
               clearInterval(slideInterval);
@@ -1609,9 +1654,8 @@
           
           promoEl.style.display = 'block';
           
-          // Rebuild DOM to avoid CSS/transition bugs
           wrapper.innerHTML = p.images.map((img, index) => `
-              <img src="${img}" class="carousel-slide ${index === 0 ? 'active' : ''}" style="opacity: ${index === 0 ? '1' : '0'};" onerror="this.src='https://via.placeholder.com/1200x400?text=Promo+Image'">
+              <img src="${img}" class="carousel-slide ${index === 0 ? 'active' : ''}" onerror="this.src='https://via.placeholder.com/1200x400?text=Promo+Image'">
           `).join("");
 
           if (p.images.length > 1) {
@@ -1650,13 +1694,11 @@
           if(slides.length === 0) return;
           
           slides[currentSlide].classList.remove('active');
-          slides[currentSlide].style.opacity = "0";
           if(dots.length > 0) dots[currentSlide].classList.remove('active');
           
           currentSlide = index;
           
           slides[currentSlide].classList.add('active');
-          slides[currentSlide].style.opacity = "1";
           if(dots.length > 0) dots[currentSlide].classList.add('active');
           
           clearInterval(slideInterval);
@@ -1818,7 +1860,7 @@
       function closeSidebars() { document.getElementById("cart-sidebar").classList.remove("open"); document.getElementById("my-orders-sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("open"); }
       function clearMyOrders() { if(confirm("Clear your order history?")) { mySessionOrders = []; localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders)); updateMyOrdersUI(); updateMyOrdersBtn(); showToast("History cleared 🗑️"); } }
 
-      // PLACE ORDER WITH STRICT TIMEOUT FIX FOR TELEGRAM
+      // PLACE ORDER WITH STRICT TELEGRAM NOTIFICATION FIX
       function placeOrder() {
         if(!cart.length) return; 
         
@@ -1952,10 +1994,9 @@
       }
 
       setInterval(() => {
-        const isLoginModalOpen = document.getElementById('admin-login-modal').classList.contains('open') || document.getElementById('customer-login-modal').classList.contains('open');
-        const isOtherModalOpen = document.querySelector('.modal-overlay.open');
-        if (!usingFirebase && currentView === "admin" && !isOtherModalOpen && !isLoginModalOpen) refreshUI();
-        if (!usingFirebase && currentView === "customer" && !isOtherModalOpen && !isLoginModalOpen) { const freshOrders = dbGet(DB_KEY.orders)||[]; checkCustomerOrderAlerts(freshOrders); updateMyOrdersUI(); }
+        const isModalOpen = document.querySelector('.modal-overlay.open');
+        if (!usingFirebase && currentView === "admin" && !isModalOpen) refreshUI();
+        if (!usingFirebase && currentView === "customer" && !isModalOpen) { const freshOrders = dbGet(DB_KEY.orders)||[]; checkCustomerOrderAlerts(freshOrders); updateMyOrdersUI(); }
       }, 2000);
 
     </script>
