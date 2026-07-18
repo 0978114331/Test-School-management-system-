@@ -108,7 +108,7 @@
       .modal-overlay.open { display: flex; }
       .modal { background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%); border: 1px solid var(--gold); border-radius: 24px; padding: 2.5rem; max-width: 480px; width: 100%; position: relative; max-height: 90vh; overflow-y: auto; animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 15px 60px rgba(0,0,0,0.8); }
       @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-      .btn-close { position: absolute; top: 1.2rem; right: 1.2rem; background: var(--surface3); border: 1px solid var(--border); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; }
+      .btn-close { position: absolute; top: 1.2rem; right: 1.2rem; background: var(--surface3); border: 1px solid var(--border); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; z-index: 100; }
       .btn-close:hover { background: var(--red); color: white; border-color: var(--red); transform: rotate(90deg); }
 
       /* Fix QR Canvas overflowing on small screens */
@@ -258,6 +258,17 @@
   </head>
   <body>
 
+    <!-- ================= ADMIN PIN SECURITY MODAL ================= -->
+    <div class="modal-overlay" id="pin-modal" style="z-index: 9999; background: var(--bg);">
+        <div class="modal" style="text-align:center; max-width: 350px;">
+            <h2 style="color:var(--gold);margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:2rem;">Admin Login</h2>
+            <p style="color:var(--muted); margin-bottom:2rem; font-size:0.95rem;">Enter security PIN to access the dashboard.</p>
+            <input type="password" id="admin-pin-input" class="form-input" style="text-align:center; font-size:2rem; letter-spacing:10px; margin-bottom:1.5rem; font-weight:bold; height:60px;" placeholder="****">
+            <div id="pin-error" style="color:var(--red); font-size:0.9rem; margin-bottom:1rem; display:none; font-weight:bold;">Incorrect PIN. Try again.</div>
+            <button class="btn btn-gold btn-full" style="padding:1.2rem; font-size:1.1rem; text-transform:uppercase;" onclick="verifyAdminPin()">Login</button>
+        </div>
+    </div>
+
     <!-- ================= ADMIN VIEW ================= -->
     <div class="view active fade-in" id="view-admin">
       <nav class="navbar">
@@ -316,7 +327,7 @@
             </div>
           </div>
           
-          <!-- PRODUCT SALES ANALYTICS -->
+          <!-- NEW: PRODUCT SALES ANALYTICS -->
           <div class="section-title" style="margin-top:3rem;"><span data-i18n="productAnalytics">Product Sales Analytics</span></div>
           <div class="stats-row">
               <div class="stat-card"><div class="stat-label" data-i18n="totalProductsSold">Total Products Sold</div><div class="stat-value" id="stat-total-products">0</div></div>
@@ -342,6 +353,16 @@
            <div class="section-title" data-i18n="systemSettings">System Settings</div>
            <div class="two-col">
              
+             <!-- Security Configuration -->
+             <div style="background:var(--surface2); padding:2rem; border-radius:20px; border:1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); grid-column: 1 / -1;">
+                <h3 style="color:var(--gold); margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:1.5rem;" data-i18n="securitySettings">Security Settings</h3>
+                <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.5rem;" data-i18n="securityDesc">Protect the Admin Dashboard with a PIN code. Leave blank to disable.</p>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label" data-i18n="adminPin">Admin PIN Code</label><input type="password" class="form-input" id="settings-admin-pin" placeholder="Enter new PIN" /></div>
+                </div>
+                <button class="btn btn-gold" onclick="saveSecuritySettings()" data-i18n="saveSettingsBtn">Save Security</button>
+             </div>
+
              <!-- Currency Configuration -->
              <div style="background:var(--surface2); padding:2rem; border-radius:20px; border:1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); grid-column: 1 / -1;">
                 <h3 style="color:var(--gold); margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:1.5rem;" data-i18n="currencySettings">Currency Settings</h3>
@@ -352,7 +373,7 @@
                 <button class="btn btn-gold" onclick="saveCurrencySettings()" data-i18n="saveSettingsBtn">Save Settings</button>
              </div>
 
-             <!-- NEW: Customer Promo Banner Slider Config -->
+             <!-- Customer Promo Banner Config -->
              <div style="background:var(--surface2); padding:2rem; border-radius:20px; border:1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); grid-column: 1 / -1;">
                 <h3 style="color:var(--gold); margin-bottom:1rem; font-family:'Playfair Display',serif; font-size:1.5rem;" data-i18n="promoTitle">Promo Banner (Customer App)</h3>
                 <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.5rem;" data-i18n="promoDesc">Display an advertisement or promotion template for customers.</p>
@@ -418,11 +439,12 @@
             <div class="section-title" data-i18n="allOrdersTitle">All Orders</div>
             <div class="orders-panel">
                 <div class="order-row header"><div>ID</div><div data-i18n="table">Table</div><div data-i18n="items">Items</div><div data-i18n="total">Total</div><div data-i18n="status">Status</div><div data-i18n="actions">Actions</div></div>
+                <!-- This container will hold the newly grouped orders -->
                 <div id="all-orders-list"></div>
             </div>
         </div>
         
-        <!-- KITCHEN -->
+        <!-- KITCHEN (MODIFIED FOR WORKFLOW) -->
         <div id="tab-kitchen" style="display:none;" class="fade-in"><div class="section-title" data-i18n="kitchenDisplayTitle">Kitchen Display</div><div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:1.5rem;" id="kitchen-grid"></div></div>
         
         <div id="tab-cashier" style="display:none;" class="fade-in"><div class="section-title" data-i18n="cashierDashboard">Cashier Dashboard</div><div class="two-col"><div><div style="font-weight:700;font-size:1.2rem;color:var(--cream);margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;" data-i18n="processPayments">Active Orders</div><div id="cashier-active-list" style="display:grid;gap:1.2rem;"></div></div><div><div style="font-weight:700;font-size:1.2rem;color:var(--green);margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;" data-i18n="completedToday">Completed Today</div><div id="cashier-completed-list" style="display:grid;gap:1.2rem;"></div></div></div></div>
@@ -626,7 +648,7 @@
         </div>
     </div>
 
-    <!-- Order Preview Modal (For Dashboard Orders Button) -->
+    <!-- NEW: Order Preview Modal (For Dashboard Orders Button) -->
     <div class="modal-overlay" id="order-preview-modal">
         <div class="modal" style="max-width:700px; padding:2.5rem;">
             <button class="btn-close" onclick="document.getElementById('order-preview-modal').classList.remove('open')">&times;</button>
@@ -652,6 +674,9 @@
                 </div>
             </div>
 
+            <!-- Customer Location Link (Only visible if location was shared) -->
+            <div id="preview-order-location" style="margin-bottom:1.5rem; text-align:right; font-size:0.9rem;"></div>
+
             <div id="preview-order-note" style="background:rgba(231,76,60,0.1); border-left:4px solid var(--red); padding:1rem; margin-bottom:1.5rem; border-radius:8px; display:none; color:var(--cream); font-size:0.95rem;">
                 <!-- note injected here -->
             </div>
@@ -676,6 +701,7 @@
           systemSettings: "Settings", dbDesc: "Database automatically linked for Real-time sync.", tgDesc: "Get orders & location via Telegram.", saveSettingsBtn: "Save",
           promoTitle: "Promo Banner (Customer App)", promoDesc: "Display an advertisement or promotion template for customers.", promoUrl: "Banner Image URL", promoStatus: "Status", savePromoBtn: "Save Banner",
           currencySettings: "Currency Settings", currencyDesc: "Configure the USD to KHR exchange rate.", exchangeRate: "Exchange Rate (1 USD = ? KHR)", payCurrency: "Payment Currency",
+          securitySettings: "Security Settings", securityDesc: "Protect the Admin Dashboard with a PIN code. Leave blank to disable.", adminPin: "Admin PIN Code",
           backToAdmin: "← Admin", tagline: "Scan. Order. Enjoy.", all: "All", viewCart: "View Cart", yourOrder: "Your Order", printQrBtn: "Print QR", doneBtn: "Done",
           addMenuTitle: "Add/Edit Item", itemName: "Name", category: "Category", description: "Description", price: "Price ($)", available: "Available", imageUrl: "Image URL", saveItemBtn: "Save",
           checkoutTitle: "Checkout", totalAmount: "Total Amount:", cashReceived: "Cash Received", changeReturn: "Change:", payPrintBtn: "Pay & Print", payConfirmBtn: "Confirm", 
@@ -692,6 +718,7 @@
           systemSettings: "ការកំណត់ប្រព័ន្ធ", dbDesc: "ទិន្នន័យត្រូវបានភ្ជាប់ដោយស្វ័យប្រវត្តិរួចរាល់", tgDesc: "ទទួលបានការកុម្ម៉ង់ និងទីតាំងភ្ញៀវតាម Telegram.", saveSettingsBtn: "រក្សាទុក",
           promoTitle: "ផ្ទាំងផ្សាយពាណិជ្ជកម្ម (ភ្ញៀវ)", promoDesc: "បង្ហាញផ្ទាំងប្រូម៉ូសិន ឬពាណិជ្ជកម្មនៅខាងលើបញ្ជីទំនិញសម្រាប់ភ្ញៀវ។", promoUrl: "តំណភ្ជាប់រូបភាព Banner", promoStatus: "ស្ថានភាព", savePromoBtn: "រក្សាទុក Banner",
           currencySettings: "ការកំណត់រូបិយប័ណ្ណ", currencyDesc: "កំណត់អត្រាប្តូរប្រាក់ ដុល្លារ ទៅ រៀល", exchangeRate: "អត្រាប្តូរប្រាក់ (១ ដុល្លារ = ? រៀល)", payCurrency: "បង់ប្រាក់ជារូបិយប័ណ្ណ",
+          securitySettings: "ការកំណត់សុវត្ថិភាព", securityDesc: "ការពារផ្ទាំងគ្រប់គ្រងជាមួយលេខកូដសម្ងាត់ (PIN)។ ទុកចំហរប្រសិនបើចង់បិទមុខងារនេះ។", adminPin: "លេខកូដសម្ងាត់ (PIN)",
           backToAdmin: "← ទៅ Admin", tagline: "ស្កេន កុម្ម៉ង់ រីករាយ។", all: "ទាំងអស់", viewCart: "មើលកន្ត្រក", yourOrder: "ការកុម្ម៉ង់របស់អ្នក", printQrBtn: "ព្រីន QR", doneBtn: "រួចរាល់",
           addMenuTitle: "បន្ថែម/កែប្រែទំនិញ", itemName: "ឈ្មោះ", category: "ប្រភេទ", description: "ការពិពណ៌នា", price: "តម្លៃ ($)", available: "ស្ថានភាព", imageUrl: "តំណភ្ជាប់រូបភាព", saveItemBtn: "រក្សាទុក",
           checkoutTitle: "ទូទាត់ប្រាក់", totalAmount: "ទឹកប្រាក់សរុប៖", cashReceived: "ប្រាក់ទទួល", changeReturn: "ប្រាក់អាប់៖", payPrintBtn: "ទូទាត់ & ព្រីន", payConfirmBtn: "បញ្ជាក់ការទូទាត់",
@@ -753,7 +780,6 @@
         if (!localStorage.getItem(DB_KEY.orders)) localStorage.setItem(DB_KEY.orders, JSON.stringify([]));
         if (!localStorage.getItem(DB_KEY.count)) localStorage.setItem(DB_KEY.count, "100");
         
-        // Ensure promo is an array of objects
         let existingPromo = JSON.parse(localStorage.getItem(DB_KEY.promo));
         if (!existingPromo || !Array.isArray(existingPromo.images)) {
             localStorage.setItem(DB_KEY.promo, JSON.stringify({ 
@@ -791,7 +817,11 @@
                         if(data.count) localStorage.setItem(DB_KEY.count, data.count);
                         if(data.promo) localStorage.setItem(DB_KEY.promo, JSON.stringify(data.promo));
                         if(data.analytics) localStorage.setItem(DB_KEY.analytics, JSON.stringify(data.analytics));
-                        refreshUI();
+                        
+                        // Only refresh UI if PIN modal is NOT open, to avoid visual jumps
+                        if(!document.getElementById('pin-modal').classList.contains('open')) {
+                            refreshUI();
+                        }
                     }
                 });
             } catch(e) { console.error(e); usingFirebase = false; }
@@ -813,11 +843,21 @@
       let revenueChartInstance = null; let currentChartMode = 'daily';
       let cItemLimit = 20;
 
-      // ================= VIEW LOGIC & BADGES =================
+      // ================= SECURITY & VIEW LOGIC =================
       function toggleMobileMenu() { document.getElementById('admin-nav-tabs').classList.toggle('show'); }
 
       function showView(v) {
         if(isStrictCustomerMode && v === 'admin') return; 
+        
+        if(v === 'admin') {
+            const s = dbGet(DB_KEY.settings) || {};
+            // Check if PIN is configured and user is NOT authenticated
+            if (s.adminPin && s.adminPin.trim() !== "" && sessionStorage.getItem('admin_auth') !== 'true') {
+                document.getElementById('pin-modal').classList.add('open');
+                return; // Prevent showing the admin view
+            }
+        }
+
         document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
         document.getElementById("view-" + v).classList.add("active");
         currentView = v;
@@ -827,6 +867,23 @@
         if (v === "admin") refreshUI();
         if (v === "customer") { renderPromoBanner(); renderCustomerMenu(currentCatFilter, true); updateCartUI(); updateMyOrdersBtn(); }
       }
+
+      function verifyAdminPin() {
+          const s = dbGet(DB_KEY.settings) || {};
+          const inputVal = document.getElementById('admin-pin-input').value;
+          
+          if (s.adminPin && inputVal === s.adminPin) {
+              sessionStorage.setItem('admin_auth', 'true');
+              document.getElementById('pin-modal').classList.remove('open');
+              document.getElementById('pin-error').style.display = 'none';
+              document.getElementById('admin-pin-input').value = "";
+              showView('admin'); // load admin view
+          } else {
+              document.getElementById('pin-error').style.display = 'block';
+              document.getElementById('admin-pin-input').value = "";
+          }
+      }
+
       function previewCustomer() { customerTableNum = 1; document.getElementById("c-table-text").textContent = "Table 1"; showView("customer"); }
 
       document.querySelectorAll(".nav-tab").forEach(btn => {
@@ -1182,7 +1239,7 @@
             dbSet(DB_KEY.tables, tables); 
       }
 
-      // Order Preview Modal Function
+      // Order Preview Modal Function (With Added Location Map Link)
       function viewOrderPreview(orderId) {
           const order = (dbGet(DB_KEY.orders)||[]).find(o => o.id === orderId);
           if(!order) return;
@@ -1197,6 +1254,14 @@
           
           document.getElementById('preview-order-total').textContent = "$" + order.total.toFixed(2);
           
+          // Customer Location Link Logic
+          const locEl = document.getElementById('preview-order-location');
+          if(order.lat && order.lng) {
+              locEl.innerHTML = `<a href="https://maps.google.com/?q=${order.lat},${order.lng}" target="_blank" style="color:var(--blue); text-decoration:none; font-weight:bold;">📍 View Customer Location</a>`;
+          } else {
+              locEl.innerHTML = `<span style="color:var(--muted);">📍 Location not provided</span>`;
+          }
+
           const noteEl = document.getElementById('preview-order-note');
           if(order.note) {
               noteEl.innerHTML = `<strong>Note:</strong> ${order.note}`;
@@ -1438,18 +1503,36 @@
           win.document.close(); win.focus(); setTimeout(() => { win.print(); win.close(); }, 300); 
       }
 
-      // ================= SETTINGS & PROMO ADMIN =================
+      // ================= SETTINGS =================
       function loadSettings() { 
           const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; 
           document.getElementById('fb-url').value = s.fbUrl || ""; 
           document.getElementById('tg-token').value = s.tgToken || ""; 
           document.getElementById('tg-chat-id').value = s.tgChatId || ""; 
           document.getElementById('exchange-rate').value = s.exchangeRate || "4100";
+          document.getElementById('settings-admin-pin').value = s.adminPin || "";
           
           const p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
           document.getElementById('promo-active').value = p.active ? "true" : "false";
           renderPromoAdminList();
       }
+      
+      function saveSecuritySettings() {
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
+          s.adminPin = document.getElementById('settings-admin-pin').value.trim();
+          localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); 
+          showToast("Security PIN Saved! 🔒");
+      }
+
+      function saveCurrencySettings() {
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
+          s.exchangeRate = document.getElementById('exchange-rate').value.trim() || "4100";
+          localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); 
+          showToast("Currency Settings Saved! ✅");
+      }
+      
+      function saveFirebaseSettings() { const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; s.fbUrl = document.getElementById('fb-url').value.trim(); localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); showToast("Database Link Saved! Reloading..."); setTimeout(() => window.location.reload(), 1000); }
+      function saveTgSettings() { const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; s.tgToken = document.getElementById('tg-token').value.trim(); s.tgChatId = document.getElementById('tg-chat-id').value.trim(); localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); showToast("Telegram Credentials Saved ✅"); }
       
       function renderPromoAdminList() {
           const p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
@@ -1499,23 +1582,6 @@
           refreshUI();
           showToast("Promo Banner Settings Saved! 🎉");
       }
-      
-      function saveCurrencySettings() {
-          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
-          s.exchangeRate = document.getElementById('exchange-rate').value.trim() || "4100";
-          localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); 
-          showToast("Currency Settings Saved! ✅");
-      }
-      
-      function saveFirebaseSettings() { const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; s.fbUrl = document.getElementById('fb-url').value.trim(); localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); showToast("Database Link Saved! Reloading..."); setTimeout(() => window.location.reload(), 1000); }
-      
-      function saveTgSettings() { 
-          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; 
-          s.tgToken = document.getElementById('tg-token').value.trim(); 
-          s.tgChatId = document.getElementById('tg-chat-id').value.trim(); 
-          dbSet(DB_KEY.settings, s); 
-          showToast("Telegram Credentials Saved ✅"); 
-      }
 
       // STRICT TELEGRAM API TESTER
       function testTelegramConnection() {
@@ -1555,26 +1621,7 @@
           });
       }
 
-      // STRICT TELEGRAM FALLBACK WRAPPER FOR ORDERS
-      function notifyTelegram(order, lat, lng) {
-        const s = JSON.parse(localStorage.getItem(DB_KEY.settings)); 
-        if(!s || !s.tgToken || !s.tgChatId) return; 
-        
-        let text = `🛎 *NEW ORDER*\n🆔 ${order.id}\n🪑 Table ${order.table}\n💰 Total: $${order.total.toFixed(2)}\n\n*Items:*\n` + order.items.map(i=>`• ${i.qty}x ${i.displayName}`).join("\n");
-        if (order.note) text += `\n\n📝 *Note:* ${order.note}`;
-        if (lat && lng) text += `\n\n📍 *Location:* [View on Google Maps](https://maps.google.com/?q=${lat},${lng})`;
-        
-        try { 
-            fetch(`https://api.telegram.org/bot${s.tgToken}/sendMessage`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ chat_id: s.tgChatId, text: text, parse_mode: 'Markdown' }) 
-            }).catch(e => console.warn("Telegram fetch error caught silently", e)); 
-        } catch(e) {}
-      }
-
       // ================= CUSTOMER VIEW (PROMO CAROUSEL, CARDS & SEE MORE) =================
-      
       let currentSlide = 0;
       let slideInterval;
 
@@ -1641,7 +1688,6 @@
           slides[currentSlide].classList.add('active');
           if(dots.length > 0) dots[currentSlide].classList.add('active');
           
-          // Reset interval when manually changed
           clearInterval(slideInterval);
           slideInterval = setInterval(() => { changeSlide(1); }, 4000);
       }
@@ -1801,7 +1847,7 @@
       function closeSidebars() { document.getElementById("cart-sidebar").classList.remove("open"); document.getElementById("my-orders-sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("open"); }
       function clearMyOrders() { if(confirm("Clear your order history?")) { mySessionOrders = []; localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders)); updateMyOrdersUI(); updateMyOrdersBtn(); showToast("History cleared 🗑️"); } }
 
-      // PLACE ORDER WITH STRICT TIMEOUT FIX FOR TELEGRAM
+      // PLACE ORDER: Robust Telegram Fallback + Location Persistence
       function placeOrder() {
         if(!cart.length) return; 
         
@@ -1810,46 +1856,70 @@
         btn.textContent="📍 Capturing Location & Processing...";
         showToast("📍 Requesting Location (Please Allow GPS)...");
         
-        const note = document.getElementById("order-note").value.trim(); const total = cart.reduce((s,c)=>s+c.price*c.qty, 0);
-        let count = parseInt(dbGet(DB_KEY.count)) || 100; count++; dbSet(DB_KEY.count, count);
-        const orderId = "#"+count;
-        
-        const order = { 
-            id: orderId, 
-            table: customerTableNum, 
-            items: cart.map(c=>({id:c.id, name:c.name, displayName: c.displayName, price:c.price, qty:c.qty, image:c.image, cat:c.cat})), 
-            total, note, status: "pending", time: Date.now() 
-        };
-        
-        let orders = dbGet(DB_KEY.orders)||[]; orders.push(order); dbSet(DB_KEY.orders, orders); updateTableStatus(customerTableNum, 1);
-        mySessionOrders.push(orderId); localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders));
+        // Execute the finalization once we have location or timing out
+        const wrapUpOrder = (lat, lng) => {
+            const total = cart.reduce((s,c)=>s+c.price*c.qty, 0);
+            let count = parseInt(dbGet(DB_KEY.count)) || 100; count++; dbSet(DB_KEY.count, count);
+            const orderId = "#"+count;
+            const note = document.getElementById("order-note").value.trim();
+            
+            const order = { 
+                id: orderId, 
+                table: customerTableNum, 
+                items: cart.map(c=>({id:c.id, name:c.name, displayName: c.displayName, price:c.price, qty:c.qty, image:c.image, cat:c.cat})), 
+                total, note, status: "pending", time: Date.now(),
+                lat: lat, lng: lng // Attach Location permanently
+            };
+            
+            let orders = dbGet(DB_KEY.orders)||[]; orders.push(order); dbSet(DB_KEY.orders, orders); updateTableStatus(customerTableNum, 1);
+            mySessionOrders.push(orderId); localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders));
 
-        let tgSent = false;
-        
-        const wrapUpOrder = () => {
+            // Call telegram notification wrapper with Keepalive
+            notifyTelegramBot(order, lat, lng);
+            
             cart=[]; document.getElementById("order-note").value=""; updateCartUI(); closeSidebars(); updateMyOrdersBtn(); 
             showToast("Order placed successfully! 🎉");
             btn.disabled=false; btn.textContent = "Place Order"; 
             refreshUI(); openMyOrders();
         };
 
-        if(window.isSecureContext && "geolocation" in navigator) {
+        let locationResolved = false;
+        if(window.isSecureContext && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 pos => { 
-                    if(!tgSent) { tgSent = true; notifyTelegram(order, pos.coords.latitude, pos.coords.longitude); wrapUpOrder(); }
+                    if(!locationResolved) { locationResolved = true; wrapUpOrder(pos.coords.latitude, pos.coords.longitude); }
                 }, 
                 err => { 
-                    if(!tgSent) { tgSent = true; notifyTelegram(order, null, null); wrapUpOrder(); }
+                    if(!locationResolved) { locationResolved = true; wrapUpOrder(null, null); }
                 }, 
-                { timeout: 3500, enableHighAccuracy: true } 
+                { timeout: 4000, enableHighAccuracy: true } 
             );
             
+            // Hard timeout in case browser hangs on Geolocation prompt natively
             setTimeout(() => {
-                if(!tgSent) { tgSent = true; notifyTelegram(order, null, null); wrapUpOrder(); }
-            }, 4000);
+                if(!locationResolved) { locationResolved = true; wrapUpOrder(null, null); }
+            }, 4500);
         } else { 
-            tgSent = true; notifyTelegram(order, null, null); wrapUpOrder(); 
+            wrapUpOrder(null, null); 
         }
+      }
+
+      function notifyTelegramBot(order, lat, lng) {
+        const s = JSON.parse(localStorage.getItem(DB_KEY.settings)); 
+        if(!s || !s.tgToken || !s.tgChatId) return; 
+        
+        let text = `🛎 *NEW ORDER*\n🆔 ${order.id}\n🪑 Table ${order.table}\n💰 Total: $${order.total.toFixed(2)}\n\n*Items:*\n` + order.items.map(i=>`• ${i.qty}x ${i.displayName}`).join("\n");
+        if (order.note) text += `\n\n📝 *Note:* ${order.note}`;
+        if (lat && lng) text += `\n\n📍 *Location:* [View on Google Maps](https://maps.google.com/?q=${lat},${lng})`;
+        
+        try { 
+            fetch(`https://api.telegram.org/bot${s.tgToken}/sendMessage`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ chat_id: s.tgChatId, text: text, parse_mode: 'Markdown' }),
+                keepalive: true // ENSURES DELIVERY ON MOBILE WHEN BROWSER MINIMIZES
+            }).catch(e => console.warn("Telegram fetch silent error", e)); 
+        } catch(e) {}
       }
 
       function updateMyOrdersBtn() { const hasOrders = mySessionOrders.length > 0; document.getElementById('my-orders-btn').style.display = hasOrders ? "flex" : "none"; }
@@ -1896,7 +1966,13 @@
       // ================= URL PARAMS & INIT =================
       function checkURLParams() {
         const params = new URLSearchParams(window.location.search); const table = params.get("table");
-        if (table && parseInt(table) > 0) { customerTableNum = parseInt(table); isStrictCustomerMode = true; document.getElementById("c-table-text").textContent = "Table " + customerTableNum; showView("customer"); }
+        if (table && parseInt(table) > 0) { 
+            customerTableNum = parseInt(table); 
+            isStrictCustomerMode = true; 
+            document.getElementById("c-table-text").textContent = "Table " + customerTableNum; 
+            showView("customer"); 
+            renderPromoBanner(); // Force execution on init
+        }
       }
 
       document.addEventListener("visibilitychange", () => { if (!document.hidden && !usingFirebase) refreshUI(); });
