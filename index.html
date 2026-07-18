@@ -327,7 +327,7 @@
             </div>
           </div>
           
-          <!-- NEW: PRODUCT SALES ANALYTICS -->
+          <!-- PRODUCT SALES ANALYTICS -->
           <div class="section-title" style="margin-top:3rem;"><span data-i18n="productAnalytics">Product Sales Analytics</span></div>
           <div class="stats-row">
               <div class="stat-card"><div class="stat-label" data-i18n="totalProductsSold">Total Products Sold</div><div class="stat-value" id="stat-total-products">0</div></div>
@@ -439,7 +439,6 @@
             <div class="section-title" data-i18n="allOrdersTitle">All Orders</div>
             <div class="orders-panel">
                 <div class="order-row header"><div>ID</div><div data-i18n="table">Table</div><div data-i18n="items">Items</div><div data-i18n="total">Total</div><div data-i18n="status">Status</div><div data-i18n="actions">Actions</div></div>
-                <!-- This container will hold the newly grouped orders -->
                 <div id="all-orders-list"></div>
             </div>
         </div>
@@ -468,7 +467,7 @@
         <div style="color:var(--gold2); font-size:1.1rem; margin-top:0.8rem; font-weight:600; letter-spacing:2px; text-transform:uppercase;" data-i18n="tagline">Scan. Order. Enjoy.</div>
       </div>
       
-      <!-- NEW AD BANNER CAROUSEL -->
+      <!-- AD BANNER CAROUSEL -->
       <div class="customer-promo fade-in" id="c-promo-container" style="animation-delay: 0.1s;">
           <div class="carousel-container" id="carousel-wrapper">
               <!-- Slides injected here -->
@@ -648,7 +647,7 @@
         </div>
     </div>
 
-    <!-- NEW: Order Preview Modal (For Dashboard Orders Button) -->
+    <!-- Order Preview Modal (For Dashboard Orders Button) -->
     <div class="modal-overlay" id="order-preview-modal">
         <div class="modal" style="max-width:700px; padding:2.5rem;">
             <button class="btn-close" onclick="document.getElementById('order-preview-modal').classList.remove('open')">&times;</button>
@@ -674,7 +673,6 @@
                 </div>
             </div>
 
-            <!-- Customer Location Link (Only visible if location was shared) -->
             <div id="preview-order-location" style="margin-bottom:1.5rem; text-align:right; font-size:0.9rem;"></div>
 
             <div id="preview-order-note" style="background:rgba(231,76,60,0.1); border-left:4px solid var(--red); padding:1rem; margin-bottom:1.5rem; border-radius:8px; display:none; color:var(--cream); font-size:0.95rem;">
@@ -811,6 +809,7 @@
                 fbDb.ref('cafehub').on('value', snapshot => {
                     const data = snapshot.val();
                     if(data) {
+                        if(data.settings) localStorage.setItem(DB_KEY.settings, JSON.stringify(data.settings));
                         if(data.tables) localStorage.setItem(DB_KEY.tables, JSON.stringify(data.tables));
                         if(data.menu) localStorage.setItem(DB_KEY.menu, JSON.stringify(data.menu));
                         if(data.orders) { localStorage.setItem(DB_KEY.orders, JSON.stringify(data.orders)); checkCustomerOrderAlerts(data.orders); }
@@ -818,7 +817,6 @@
                         if(data.promo) localStorage.setItem(DB_KEY.promo, JSON.stringify(data.promo));
                         if(data.analytics) localStorage.setItem(DB_KEY.analytics, JSON.stringify(data.analytics));
                         
-                        // Only refresh UI if PIN modal is NOT open, to avoid visual jumps
                         if(!document.getElementById('pin-modal').classList.contains('open')) {
                             refreshUI();
                         }
@@ -851,10 +849,9 @@
         
         if(v === 'admin') {
             const s = dbGet(DB_KEY.settings) || {};
-            // Check if PIN is configured and user is NOT authenticated
             if (s.adminPin && s.adminPin.trim() !== "" && sessionStorage.getItem('admin_auth') !== 'true') {
                 document.getElementById('pin-modal').classList.add('open');
-                return; // Prevent showing the admin view
+                return; 
             }
         }
 
@@ -877,7 +874,7 @@
               document.getElementById('pin-modal').classList.remove('open');
               document.getElementById('pin-error').style.display = 'none';
               document.getElementById('admin-pin-input').value = "";
-              showView('admin'); // load admin view
+              showView('admin'); 
           } else {
               document.getElementById('pin-error').style.display = 'block';
               document.getElementById('admin-pin-input').value = "";
@@ -1297,7 +1294,7 @@
           document.getElementById('order-preview-modal').classList.add('open');
       }
       
-      // Kitchen Workflow Fixed
+      // Kitchen Workflow Fixed: No Finish/Done Button for Kitchen Staff
       function renderKitchen() { 
           const el = document.getElementById("kitchen-grid"); if(!el) return; 
           const orders = (dbGet(DB_KEY.orders)||[]).filter(o=>o.status!=="done"); 
@@ -1520,24 +1517,35 @@
       function saveSecuritySettings() {
           const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
           s.adminPin = document.getElementById('settings-admin-pin').value.trim();
-          localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); 
+          dbSet(DB_KEY.settings, s); 
           showToast("Security PIN Saved! 🔒");
       }
 
       function saveCurrencySettings() {
           const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
           s.exchangeRate = document.getElementById('exchange-rate').value.trim() || "4100";
-          localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); 
+          dbSet(DB_KEY.settings, s); 
           showToast("Currency Settings Saved! ✅");
       }
       
       function saveFirebaseSettings() { const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; s.fbUrl = document.getElementById('fb-url').value.trim(); localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); showToast("Database Link Saved! Reloading..."); setTimeout(() => window.location.reload(), 1000); }
-      function saveTgSettings() { const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; s.tgToken = document.getElementById('tg-token').value.trim(); s.tgChatId = document.getElementById('tg-chat-id').value.trim(); localStorage.setItem(DB_KEY.settings, JSON.stringify(s)); showToast("Telegram Credentials Saved ✅"); }
       
+      function saveTgSettings() { 
+          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {}; 
+          s.tgToken = document.getElementById('tg-token').value.trim(); 
+          s.tgChatId = document.getElementById('tg-chat-id').value.trim(); 
+          dbSet(DB_KEY.settings, s); 
+          showToast("Telegram Credentials Saved ✅"); 
+      }
+
       function renderPromoAdminList() {
-          const p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
-          const listEl = document.getElementById('promo-images-list');
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
           
+          if (p.url && (!p.images || p.images.length === 0)) {
+              p.images = [p.url];
+          }
+
+          const listEl = document.getElementById('promo-images-list');
           if(!p.images || p.images.length === 0) {
               listEl.innerHTML = `<div style="color:var(--muted); font-size:0.9rem;">No banners added. Add an image URL above.</div>`;
               return;
@@ -1557,8 +1565,9 @@
           const url = input.value.trim();
           if(!url) return showToast("Please enter an image URL.");
           
-          let p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
           if(!p.images) p.images = [];
+          if (p.url && p.images.length === 0) p.images = [p.url];
           
           p.images.push(url);
           dbSet(DB_KEY.promo, p);
@@ -1568,7 +1577,7 @@
       }
 
       function removePromoImage(idx) {
-          let p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
           if(!p.images) return;
           p.images.splice(idx, 1);
           dbSet(DB_KEY.promo, p);
@@ -1576,7 +1585,7 @@
       }
 
       function savePromoSettings() {
-          let p = JSON.parse(localStorage.getItem(DB_KEY.promo)) || { active: true, images: [] };
+          let p = dbGet(DB_KEY.promo) || { active: true, images: [] };
           p.active = document.getElementById('promo-active').value === "true";
           dbSet(DB_KEY.promo, p);
           refreshUI();
@@ -1585,7 +1594,7 @@
 
       // STRICT TELEGRAM API TESTER
       function testTelegramConnection() {
-          const s = JSON.parse(localStorage.getItem(DB_KEY.settings)); 
+          const s = dbGet(DB_KEY.settings) || {}; 
           const statusEl = document.getElementById('tg-status');
           
           if(!s || !s.tgToken || !s.tgChatId) {
@@ -1631,7 +1640,11 @@
           const dotsContainer = document.getElementById('carousel-dots');
           if(!promoEl) return;
           
-          const p = dbGet(DB_KEY.promo) || {};
+          let p = dbGet(DB_KEY.promo) || {};
+          
+          if (p.url && (!p.images || p.images.length === 0)) {
+              p.images = [p.url];
+          }
           
           if(!p.active || !p.images || p.images.length === 0) {
               promoEl.style.display = 'none';
@@ -1847,7 +1860,7 @@
       function closeSidebars() { document.getElementById("cart-sidebar").classList.remove("open"); document.getElementById("my-orders-sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("open"); }
       function clearMyOrders() { if(confirm("Clear your order history?")) { mySessionOrders = []; localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders)); updateMyOrdersUI(); updateMyOrdersBtn(); showToast("History cleared 🗑️"); } }
 
-      // PLACE ORDER: Robust Telegram Fallback + Location Persistence
+      // PLACE ORDER WITH STRICT TELEGRAM NOTIFICATION FIX
       function placeOrder() {
         if(!cart.length) return; 
         
@@ -1856,7 +1869,6 @@
         btn.textContent="📍 Capturing Location & Processing...";
         showToast("📍 Requesting Location (Please Allow GPS)...");
         
-        // Execute the finalization once we have location or timing out
         const wrapUpOrder = (lat, lng) => {
             const total = cart.reduce((s,c)=>s+c.price*c.qty, 0);
             let count = parseInt(dbGet(DB_KEY.count)) || 100; count++; dbSet(DB_KEY.count, count);
@@ -1868,13 +1880,12 @@
                 table: customerTableNum, 
                 items: cart.map(c=>({id:c.id, name:c.name, displayName: c.displayName, price:c.price, qty:c.qty, image:c.image, cat:c.cat})), 
                 total, note, status: "pending", time: Date.now(),
-                lat: lat, lng: lng // Attach Location permanently
+                lat: lat, lng: lng 
             };
             
             let orders = dbGet(DB_KEY.orders)||[]; orders.push(order); dbSet(DB_KEY.orders, orders); updateTableStatus(customerTableNum, 1);
             mySessionOrders.push(orderId); localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders));
 
-            // Call telegram notification wrapper with Keepalive
             notifyTelegramBot(order, lat, lng);
             
             cart=[]; document.getElementById("order-note").value=""; updateCartUI(); closeSidebars(); updateMyOrdersBtn(); 
@@ -1895,7 +1906,6 @@
                 { timeout: 4000, enableHighAccuracy: true } 
             );
             
-            // Hard timeout in case browser hangs on Geolocation prompt natively
             setTimeout(() => {
                 if(!locationResolved) { locationResolved = true; wrapUpOrder(null, null); }
             }, 4500);
@@ -1905,7 +1915,7 @@
       }
 
       function notifyTelegramBot(order, lat, lng) {
-        const s = JSON.parse(localStorage.getItem(DB_KEY.settings)); 
+        const s = dbGet(DB_KEY.settings) || {}; 
         if(!s || !s.tgToken || !s.tgChatId) return; 
         
         let text = `🛎 *NEW ORDER*\n🆔 ${order.id}\n🪑 Table ${order.table}\n💰 Total: $${order.total.toFixed(2)}\n\n*Items:*\n` + order.items.map(i=>`• ${i.qty}x ${i.displayName}`).join("\n");
@@ -1917,7 +1927,7 @@
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ chat_id: s.tgChatId, text: text, parse_mode: 'Markdown' }),
-                keepalive: true // ENSURES DELIVERY ON MOBILE WHEN BROWSER MINIMIZES
+                keepalive: true 
             }).catch(e => console.warn("Telegram fetch silent error", e)); 
         } catch(e) {}
       }
@@ -1971,7 +1981,7 @@
             isStrictCustomerMode = true; 
             document.getElementById("c-table-text").textContent = "Table " + customerTableNum; 
             showView("customer"); 
-            renderPromoBanner(); // Force execution on init
+            renderPromoBanner(); 
         }
       }
 
