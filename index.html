@@ -134,7 +134,7 @@
       .form-input:focus { border-color: var(--gold); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 0 0 3px rgba(201, 168, 76, 0.2); background: rgba(0,0,0,0.5); }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
 
-      /* ===== CAROUSEL PROMO BANNER ===== */
+      /* ===== CAROUSEL PROMO BANNER (CUSTOMER VIEW) ===== */
       .customer-promo { padding: 2rem 2rem 0 2rem; max-width: 1400px; margin: 0 auto; display: none; animation: fadeIn 0.5s ease-out; position: relative; }
       .carousel-container { position: relative; width: 100%; height: 220px; border-radius: 24px; overflow: hidden; box-shadow: 0 12px 35px rgba(0,0,0,0.6); border: 1px solid var(--border); background: var(--surface2); }
       .carousel-slide { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 0.8s ease-in-out; object-fit: cover; }
@@ -181,7 +181,16 @@
 
       /* ===== CUSTOMER VIEW HEADER ===== */
       .customer-view { background: var(--bg); min-height: 100vh; position: relative; }
-      .customer-hero { background: linear-gradient(160deg, rgba(35, 31, 26, 0.95) 0%, rgba(26, 22, 18, 0.98) 100%); border-bottom: 1px solid var(--border); padding: 2.5rem 2rem; text-align: center; position: relative; overflow: hidden; }
+      
+      /* NEW FADED BACKGROUND FOR HERO SECTION */
+      .customer-hero { 
+            background: linear-gradient(180deg, rgba(15, 13, 11, 0.7) 0%, rgba(15, 13, 11, 0.95) 100%), url('https://i.ibb.co/xt7fvzBs/ef8a8b54-92f7-44a7-8ea7-10cdf73e4608.png') center/cover no-repeat; 
+            border-bottom: 1px solid var(--border); 
+            padding: 3.5rem 2rem; 
+            text-align: center; 
+            position: relative; 
+            overflow: hidden; 
+        }
       .customer-hero::before { content: ""; position: absolute; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(201, 168, 76, 0.1) 0%, transparent 70%); top: -150px; left: 50%; transform: translateX(-50%); animation: pulse 6s infinite alternate; }
       
       .customer-table-badge { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #000; padding: 0.6rem 1.8rem; border-radius: 30px; font-weight: 800; font-size: 0.95rem; margin-bottom: 1rem; position: relative; z-index: 2; cursor: pointer; transition: all 0.3s; box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4); text-transform: uppercase; letter-spacing: 1px; }
@@ -712,7 +721,7 @@
     <div id="print-area" style="display:none;"></div>
 
     <script>
-      // ================= TRANSLATIONS =================
+      // ================= ការបកប្រែភាសា (TRANSLATIONS) =================
       const translations = {
         en: {
           navOverview: "Overview", navTables: "Tables", navMenu: "Menu", navOrders: "Orders", navKitchen: "Kitchen", navCashier: "Cashier", navSettings: "Settings", live: "Live", customerView: "Customer View",
@@ -779,12 +788,12 @@
         if(currentView === 'customer') renderCustomerMenu(currentCatFilter, false);
       }
 
-      // ================= DATABASE (REAL-TIME SYNC & ANALYTICS) =================
+      // ================= មូលដ្ឋានទិន្នន័យ & FIREBASE (DATABASE SYNC) =================
       const DB_KEY = { tables: "ch_tables", menu: "ch_menu", orders: "ch_orders", settings: "ch_settings", count: "ch_count", promo: "ch_promo", analytics: "ch_analytics" };
       let fbDb = null; let usingFirebase = false;
 
       function initDB() {
-        let s = dbGet(DB_KEY.settings) || {};
+        let s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
         if (!s.fbUrl || s.fbUrl === "") {
             s.fbUrl = "https://cafe-busra-default-rtdb.firebaseio.com/";
             localStorage.setItem(DB_KEY.settings, JSON.stringify(s));
@@ -800,7 +809,8 @@
         if (!localStorage.getItem(DB_KEY.orders)) localStorage.setItem(DB_KEY.orders, JSON.stringify([]));
         if (!localStorage.getItem(DB_KEY.count)) localStorage.setItem(DB_KEY.count, "100");
         
-        let existingPromo = dbGet(DB_KEY.promo);
+        // កំណត់ផ្ទាំង Banner ដំបូង
+        let existingPromo = JSON.parse(localStorage.getItem(DB_KEY.promo));
         if (!existingPromo || !Array.isArray(existingPromo.images)) {
             localStorage.setItem(DB_KEY.promo, JSON.stringify({ 
                 active: true, 
@@ -819,8 +829,9 @@
         connectFirebase();
       }
 
+      // ភ្ជាប់ទៅកាន់ Firebase ដើម្បីទាញទិន្នន័យភ្លាមៗ (Realtime)
       function connectFirebase() {
-        const s = dbGet(DB_KEY.settings) || {};
+        const s = JSON.parse(localStorage.getItem(DB_KEY.settings)) || {};
         if(s.fbUrl && s.fbUrl.includes("firebaseio.com")) {
             try {
                 if(!firebase.apps.length) firebase.initializeApp({ databaseURL: s.fbUrl });
@@ -865,14 +876,14 @@
         } catch(e) { console.warn(e); }
       }
 
-      // ================= STATE =================
+      // ================= អថេរស្ថានភាព (STATE) =================
       let currentAdminTab = "overview"; let currentView = "admin";
       let customerTableNum = 1; let cart = []; let currentCatFilter = null; let isStrictCustomerMode = false;
       let mySessionOrders = JSON.parse(localStorage.getItem('my_orders_history') || '[]');
       let revenueChartInstance = null; let currentChartMode = 'daily';
       let cItemLimit = 20;
 
-      // ================= SECURITY & VIEW LOGIC =================
+      // ================= គ្រប់គ្រងផ្ទាំងបង្ហាញ (VIEW LOGIC) =================
       function toggleMobileMenu() { document.getElementById('admin-nav-tabs').classList.toggle('show'); }
 
       function triggerTransition(targetView) {
@@ -954,6 +965,7 @@
 
       function previewCustomer() { customerTableNum = 1; document.getElementById("c-table-text").textContent = "Table 1"; showView("customer"); }
 
+      // ចាប់សកម្មភាពពេលចុចលើ Tab របស់ Admin
       document.querySelectorAll(".nav-tab").forEach(btn => {
         btn.addEventListener("click", function() {
           currentAdminTab = this.dataset.tab;
@@ -964,6 +976,7 @@
         });
       });
 
+      // ធ្វើឱ្យទិន្នន័យនៅលើអេក្រង់ថ្មី (Refresh UI)
       function refreshUI() {
         updateStats(); updateBadges(); 
         renderOverviewOrders(); renderOverviewTables(); renderAdminTables(); renderAdminMenu(); renderAllOrders(); renderKitchen();
@@ -1001,7 +1014,7 @@
           showToast("All customer data has been successfully cleared.");
       }
 
-      // ================= CHART, STATS & ANALYTICS =================
+      // ================= ស្ថិតិ និងគំនូសតាង (CHART & STATS) =================
       function updateStats() {
         const orders = dbGet(DB_KEY.orders) || []; const tables = dbGet(DB_KEY.tables) || [];
         const today = orders.filter(o => new Date(o.time).toDateString() === new Date().toDateString());
@@ -1011,6 +1024,7 @@
         document.getElementById("stat-pending").textContent = orders.filter(o => o.status === "pending" || o.status === "preparing").length;
       }
       
+      // Update គំនូសតាងប្រាក់ចំណូល
       function updateChart(mode) {
         currentChartMode = mode; document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.chart-btn[onclick="updateChart('${mode}')"]`).classList.add('active');
         const orders = (dbGet(DB_KEY.orders) || []).filter(o => o.status === 'done');
@@ -1106,7 +1120,7 @@
           });
       }
 
-      // ================= ADMIN FUNCTIONS =================
+      // ================= អនុគមន៍សម្រាប់ ADMIN (ADMIN FUNCTIONS) =================
       function renderOverviewOrders() { const el = document.getElementById("recent-orders-list"); if(el) el.innerHTML = (dbGet(DB_KEY.orders)||[]).slice(-5).reverse().map(o => `<div class="order-row" style="cursor:pointer;" onclick="viewOrderPreview('${o.id}')"><div>${o.id}</div><div>T-${o.table}</div><div style="font-size:0.75rem;">${o.items.length} items</div><div><strong style="color:var(--gold)">$${o.total.toFixed(2)}</strong></div><div><span class="order-status status-${o.status}">${o.status}</span></div><div><button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); advanceOrder('${o.id}')">Next</button></div></div>`).join(""); }
       function renderOverviewTables() { const el = document.getElementById("overview-tables-grid"); if(el) el.innerHTML = (dbGet(DB_KEY.tables)||[]).map(t => `<div class="table-card ${t.status==='occupied'?'occupied':''}"><div class="table-num">T-${t.num}</div><div class="table-status ${t.status==='occupied'?'busy':'free'}">${t.status}</div></div>`).join(""); }
       function addTable() { const num = parseInt(document.getElementById("add-table-num").value); if (!num) return; let tables = dbGet(DB_KEY.tables) || []; if (tables.find(t => t.num === num)) return showToast("Table Exists!"); tables.push({ id: Date.now(), num, status: "free", currentOrders: 0 }); tables.sort((a, b) => a.num - b.num); dbSet(DB_KEY.tables, tables); document.getElementById("add-table-num").value = ""; refreshUI(); showToast("Table Added!"); }
@@ -1168,9 +1182,11 @@
           document.getElementById('tv-total').textContent = "$" + grandTotal.toFixed(2);
       }
 
+      // បង្កើត QR Code សម្រាប់តុនីមួយៗ
       function showQR(num) { document.getElementById("qr-modal").classList.add("open"); document.getElementById("qr-table-label").textContent = "Table " + num; document.getElementById("qr-display").innerHTML = ""; const url = window.location.href.split("?")[0] + "?table=" + num; try { new QRCode(document.getElementById("qr-display"), { text: url, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff" }); } catch(e) { document.getElementById("qr-display").innerHTML = "QR Code"; } }
       function printQR() { const win = window.open("", "_blank"); win.document.write(`<html><body style="text-align:center;font-family:sans-serif;padding:40px;"><h2>COFFEE BUSRA</h2><p>${document.getElementById("qr-table-label").textContent}</p>${document.getElementById("qr-display").innerHTML}<p style="font-size:12px;">Scan to order</p><\/body><\/html>`); win.document.close(); setTimeout(() => { win.print(); win.close(); }, 300); }
 
+      // បង្ហាញបញ្ជីទំនិញក្នុង Admin រួមជាមួយប៊ូតុង Toggle
       function renderAdminMenu() { 
         const el = document.getElementById("admin-menu-grid"); 
         if(el) {
@@ -1192,12 +1208,15 @@
                         <div class="c-item-footer">
                             <div class="c-item-price">$${m.price.toFixed(2)}</div>
                             <div style="display:flex; gap:0.6rem; align-items:center;">
+                                
+                                <!-- ប៊ូតុង Toggle Switch (បិទ/បើក) -->
                                 <div class="switch-label-wrap" title="Turn Item On/Off">
                                     <label class="switch">
                                       <input type="checkbox" ${m.available ? 'checked' : ''} onchange="toggleAvailable(${m.id})">
                                       <span class="slider"></span>
                                     </label>
                                 </div>
+
                                 <button class="btn btn-outline btn-sm" onclick="openEditMenuModal(${m.id})">Edit</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteMenuItem(${m.id})">Del</button>
                             </div>
@@ -1222,7 +1241,7 @@
           showToast("Product deleted successfully.");
       }
 
-      // ================= IMPROVED "ALL ORDERS" SECTION =================
+      // ================= ការរៀបចំប្រវត្តិការកុម្ម៉ង់ (GROUPED ORDERS) =================
       let openOrderGroups = new Set();
       
       function getOrderGroup(timestamp) {
@@ -1389,7 +1408,7 @@
           document.getElementById('order-preview-modal').classList.add('open');
       }
       
-      // Kitchen Workflow Fixed: No Finish/Done Button for Kitchen Staff
+      // Kitchen Workflow Fixed
       function renderKitchen() { 
           const el = document.getElementById("kitchen-grid"); if(!el) return; 
           const orders = (dbGet(DB_KEY.orders)||[]).filter(o=>o.status!=="done"); 
@@ -1751,6 +1770,7 @@
           
           promoEl.style.display = 'block';
           
+          // Rebuild DOM to avoid CSS/transition bugs
           wrapper.innerHTML = p.images.map((img, index) => `
               <img src="${img}" class="carousel-slide ${index === 0 ? 'active' : ''}" style="opacity: ${index === 0 ? '1' : '0'};" onerror="this.src='https://via.placeholder.com/1200x400?text=Promo+Image'">
           `).join("");
@@ -1957,9 +1977,8 @@
       function openCart() { document.getElementById("cart-sidebar").classList.add("open"); document.getElementById("sidebar-overlay").classList.add("open"); }
       function openMyOrders() { document.getElementById("my-orders-sidebar").classList.add("open"); document.getElementById("sidebar-overlay").classList.add("open"); updateMyOrdersUI(); }
       function closeSidebars() { document.getElementById("cart-sidebar").classList.remove("open"); document.getElementById("my-orders-sidebar").classList.remove("open"); document.getElementById("sidebar-overlay").classList.remove("open"); }
-      function clearMyOrders() { if(confirm("Clear your order history?")) { mySessionOrders = []; localStorage.setItem('my_orders_history', JSON.stringify(mySessionOrders)); updateMyOrdersUI(); updateMyOrdersBtn(); showToast("History cleared 🗑️"); } }
 
-      // PLACE ORDER WITH STRICT TIMEOUT FIX FOR TELEGRAM
+      // PLACE ORDER WITH STRICT TELEGRAM NOTIFICATION FIX
       function placeOrder() {
         if(!cart.length) return; 
         
